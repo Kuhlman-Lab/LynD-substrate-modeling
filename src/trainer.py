@@ -17,14 +17,7 @@ from torchmetrics import AUROC
 
 from dataset import SequenceDataset
 from network import load_model
-"""
-TODO:
 
-- Set up simple trainer class for neural net
-- Set up DataLoader for seq data
-- Set up a few basic network types (MLP to start)
-
-"""
 
 def clf_metrics():    
     return {
@@ -92,7 +85,7 @@ def train(args):
     print(args, '\n', '=' * 50)
     
     # load dataset and dataloader
-    train_dataset = SequenceDataset(args.sele, args.anti)
+    train_dataset = SequenceDataset(args.sele, args.anti, features=args.features)
     generator = torch.Generator()
     if args.seed != -1:
         generator = generator.manual_seed(args.seed)
@@ -134,6 +127,8 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, help='batch size for training', default=2048)
     parser.add_argument('--epochs', type=int, help='training epochs', default=5)
     parser.add_argument('--learning_rate', type=float, help='initial network learning rate', default=1e-3)
-    
+    parser.add_argument('--features', type=str, 
+    help='which features to use (onehot, continuous, or ECFP)', default='onehot')
+    parser.add_argument('--model', type=str, help='Which model type to use (MLP, )', default='MLP')
     train(parser.parse_args())
 

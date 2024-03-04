@@ -2,19 +2,26 @@ import torch
 import pandas as pd
 import numpy as np
 import torch.nn.functional as F
+from ecfp import dense_morgan
 
 
 class SequenceDataset(torch.utils.data.Dataset):
     """Dataset class for LynD Sequence Data"""
     
-    def __init__(self, sele, anti):
+    def __init__(self, sele, anti, features='onehot'):
         
         # load dataframes and remove duplicates and overlap
         sele_df, anti_df = import_data(sele, anti)
-        
+        self.features = features
+       
         # featurize and combine dataframes
         self.df = featurize(sele_df, anti_df)
 
+        if self.features == 'ECFP':
+            # generate feature matrix
+            self.matrix, _, _ = dense_morgan(4, False)
+            self.matrix = torch.tensor(self.matrix)
+            # self.matrix.to('cuda')
         return
     
     def __len__(self):
@@ -33,9 +40,63 @@ class SequenceDataset(torch.utils.data.Dataset):
             idx_list.append(idx)
         
         idx_list = torch.flatten(torch.tensor(idx_list)) # [6]
-        one_hot = F.one_hot(idx_list, num_classes=20) # [120]
-        return torch.flatten(one_hot).to(torch.float32), sample.active
+        
+        if self.features == 'onehot':
+            features = F.one_hot(idx_list, num_classes=20).to(torch.float32) # [120]
+        
+        elif self.features == 'continuous':
+            features = idx_list
+        
+        elif self.features == 'ECFP':
+            idx_list = idx_list[:, None].repeat(1, self.matrix.shape[-1]) # reshape to [6, 208]
+            features = torch.gather(self.matrix, 0, idx_list) # [6, 208]
+            features = features.to(torch.float32) # [6 x 208]
+
+        return features, sample.active
+
+
+
+class LibraryDataset(torch.utils.data.Dataset):
+    def __init__(self, x, features='onehot'):
+                
+        self.X = x  # should be array [N, L] where N is number of peptides and L is constant peptide length
+        self.features = features
+
+        if self.features == 'ECFP':
+            # generate feature matrix
+            self.matrix, _, _ = dense_morgan(4, False)
+            self.matrix = torch.tensor(self.matrix)
+        return
     
+    def __len__(self):
+        return self.X.shape[0]
+    
+    def __getitem__(self, index):
+        
+        sample = self.X[index, :]
+       
+        # convert variable seq region to an array of AA indices     
+        alphabet = 'ACDEFGHIKLMNPQRSTVWY'
+        idx_list = []
+        for aa in sample:
+            idx = alphabet.index(aa)
+            idx_list.append(idx)
+        
+        idx_list = torch.flatten(torch.tensor(idx_list)) # [6]
+        
+        if self.features == 'onehot':
+            features = F.one_hot(idx_list, num_classes=20).to(torch.float32) # [120]
+        
+        elif self.features == 'continuous':
+            features = idx_list
+        
+        elif self.features == 'ECFP':
+            idx_list = idx_list[:, None].repeat(1, self.matrix.shape[-1]) # reshape to [6, 208]
+            features = torch.gather(self.matrix, 0, idx_list) # [6, 208]
+            features = features.to(torch.float32) # [6 x 208]
+
+        return features
+            
      
 def import_data(sel='../../data/csv/A3_Sup_pos_LynD_R1_001.csv', 
                 anti='../../data/csv/A5_Elu_pos_LynD_R1_001.csv'):

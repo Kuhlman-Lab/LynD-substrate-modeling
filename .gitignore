@@ -1,7 +1,7 @@
-./data
+data
 
 src/__pycache__
-src/logs
+src/logs/
 
 src/checkpoints/
 src/lightning_logs/
