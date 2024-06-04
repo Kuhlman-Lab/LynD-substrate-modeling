@@ -11,10 +11,11 @@ def convert_seq_to_idx(library):
     # convert variable seq region to an array of AA indices
     
     alphabet = 'ACDEFGHIKLMNPQRSTVWY'
+    new_lib = np.empty_like(library, dtype=int)
     for ix in range(n):
         for iy in range(m):
-            library[ix, iy] = alphabet.index(library[ix, iy])
-    return library.astype(int)
+            new_lib[ix, iy] = alphabet.index(library[ix, iy])
+    return new_lib
 
 def compute_pairwise_epistasis(X, y, return_proba=True):
     '''
@@ -45,7 +46,7 @@ def compute_pairwise_epistasis(X, y, return_proba=True):
     
     epi = np.zeros((seq_len, seq_len, n_aas, n_aas), dtype=np.float32)
     proba = np.zeros((seq_len, seq_len, n_aas, n_aas), dtype=np.float32)
-    
+
     #p_good is p(G)
     p_good = np.mean(y)
 
@@ -54,7 +55,6 @@ def compute_pairwise_epistasis(X, y, return_proba=True):
         for pos2 in range(pos1 + 1, seq_len):
             for aa1 in constants.aas:
                 for aa2 in constants.aas:
-                    
                     #compute all of the requisite probabilities
                     aa1_mask = X[:,pos1] == constants.aa_dict[aa1]
                     aa2_mask = X[:,pos2] == constants.aa_dict[aa2]
@@ -67,7 +67,6 @@ def compute_pairwise_epistasis(X, y, return_proba=True):
                     p_good_c_aa1 = np.mean(y[aa1_mask])
                     p_good_c_aa2 = np.mean(y[aa2_mask])
                     p_good_c_aa12 = np.mean(y[aa1_mask & aa2_mask])
-                    
                     #compute epi
                     x = np.divide(p_good_c_aa12 * p_aa12 * p_good, 
                                   p_good_c_aa1 * p_good_c_aa2 * p_aa1 * p_aa2)
@@ -77,10 +76,9 @@ def compute_pairwise_epistasis(X, y, return_proba=True):
             
             
             print(f'Pos{pos1+1}/pos{pos2+1} epi computed. . .')
-            
+    np.save('epi.npy', epi)        
     if return_proba:
         return epi, proba
-    
     return epi    
 
 
@@ -119,10 +117,12 @@ def hamming_distance(P, pep,
         Returns:
                   H:   a slice of the original P array    
     '''    
-    D = P == pep
+    # P is reference set [N, L]
+    # pep is query peptide [L]
+    D = P == pep # D is a boolean matrix of matches [N, L]
     
     if return_distance:
-        return np.sum(~D, axis=1)
+        return np.sum(~D, axis=1) # returns matrix of Hamming distances [N]
     
     match = pep.size - h
     if cum:
@@ -146,6 +146,27 @@ def sample_random_peptides(n, length, amino_acids):
     From https://github.com/avngrdv/mRNA-display-deep-learning/blob/main/code/utils/misc.py
     Generate an array of random peptide sequences. shape = (n_peptides, pep_len)
     '''
-    
     P = np.random.choice(amino_acids, size=(n, length), replace=True)    
+    return P  
+
+
+def sample_random_peptides_wCys(n, length, amino_acids):
+    '''
+    From https://github.com/avngrdv/mRNA-display-deep-learning/blob/main/code/utils/misc.py
+    Generate an array of random peptide sequences. shape = (n_peptides, pep_len)
+    
+    CHANGES:
+    Modified to do constrained generation to make sure at least 1x Cys is present in each peptide
+    '''
+    
+    # randomly choose cys position
+    C_pos = np.random.choice(8, size=n, replace=True) # [N,]
+    
+    # make normal random array
+    P = np.random.choice(amino_acids, size=(n, length), replace=True) # [N, L]
+    
+    # fill in C at each randomly selected position
+    for idx in range(n):
+        P[idx, C_pos[idx]] = 'C'
+
     return P  

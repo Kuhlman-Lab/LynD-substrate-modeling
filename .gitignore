@@ -1,7 +1,13 @@
-data
+data/**
 
 src/__pycache__
 src/logs/
+src/runscripts/
 
 src/checkpoints/
 src/lightning_logs/
+
+**/.ipynb_checkpoints/**
+*.pyc
+
+**/__pycache__/**

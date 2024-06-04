@@ -280,9 +280,8 @@ def epistasis_bw_positions(epi, basename):
                            where X.shape[1] is peptide sequence length (number of positions),
                            and n_aas is the number of amino acid monomers in the library                   
     '''   
-    
     epi = np.nanmean(np.abs(epi), axis=(2,3))
-
+    print(epi)
     fig, ax = plt.subplots(1, 1, figsize=(7.5, 6), dpi=300) 
     norm = mpl.colors.Normalize(vmin=0, vmax=0.6)
     c = ax.pcolor(epi, cmap=mpl.cm.cividis, norm=norm, edgecolors='w', linewidths=4)    

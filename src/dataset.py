@@ -1,6 +1,8 @@
 import torch
 import pandas as pd
 import numpy as np
+import os
+from glob import glob
 import torch.nn.functional as F
 from ecfp import dense_morgan
 
@@ -8,20 +10,23 @@ from ecfp import dense_morgan
 class SequenceDataset(torch.utils.data.Dataset):
     """Dataset class for LynD Sequence Data"""
     
-    def __init__(self, sele, anti, features='onehot'):
+    def __init__(self, sele, anti, features='onehot', variable_region=None, filter_seq=None):
         
         # load dataframes and remove duplicates and overlap
         sele_df, anti_df = import_data(sele, anti)
         self.features = features
        
         # featurize and combine dataframes
-        self.df = featurize(sele_df, anti_df)
+        # variable_region = [[22, 25], [26, 29]] if 'LynD' in sele else None # use variable region to extract as needed
+        self.df = featurize(sele_df, anti_df, vr=variable_region)
+
+        if filter_seq is not None:
+            self._filter_seq(filter_seq)
 
         if self.features == 'ECFP':
             # generate feature matrix
             self.matrix, _, _ = dense_morgan(4, False)
             self.matrix = torch.tensor(self.matrix)
-            # self.matrix.to('cuda')
         return
     
     def __len__(self):
@@ -50,10 +55,28 @@ class SequenceDataset(torch.utils.data.Dataset):
         elif self.features == 'ECFP':
             idx_list = idx_list[:, None].repeat(1, self.matrix.shape[-1]) # reshape to [6, 208]
             features = torch.gather(self.matrix, 0, idx_list) # [6, 208]
-            features = features.to(torch.float32) # [6 x 208]
+            features = features.to(torch.float32) # [6, 208]
+
+        elif self.features == 'ESM':
+            # load from custom filepath
+            cpath = '/work/users/d/i/dieckhau/LynD-embeddings/full'
+            for aa in seq:
+                cpath = os.path.join(cpath, aa)
+            cpath = os.path.join(cpath, 'emb.pt')
+            # trim out any missing seq info
+            features = torch.load(cpath) # [7, 1280]
 
         return features, sample.active
 
+    def _filter_seq(self, filter_seq='C1-4'):
+        """Remove any sequences matching filter seq criteria (e.g., all with Cys in positions 1-4)"""
+        aa = filter_seq[0]
+        pos_range = filter_seq[1:].split('-')
+        pos_range = [int(p) for p in pos_range]
+        mask = self.df['var_seq'].str[pos_range[0] - 1: pos_range[1]].str.contains(aa)
+        self.df = self.df.loc[~mask].reset_index(drop=True)
+        print('Dataset filtered to remove pattern %s, leaving %s data points' % (filter_seq, str(self.df.shape[0])))
+        return
 
 
 class LibraryDataset(torch.utils.data.Dataset):
@@ -99,39 +122,82 @@ class LibraryDataset(torch.utils.data.Dataset):
             
      
 def import_data(sel='../../data/csv/A3_Sup_pos_LynD_R1_001.csv', 
-                anti='../../data/csv/A5_Elu_pos_LynD_R1_001.csv'):
-    """Import and curate data for modeling"""
-    sel = pd.read_csv(sel)
-    sel = sel.drop_duplicates(subset=['seq'])
+                anti='../../data/csv/A5_Elu_pos_LynD_R1_001.csv', var_region=None):
+    """Import and curate data for modeling"""    
+    def get_df(location, header=None):
+        """Load file or, if dir, grab all files in all subdirectories recursively"""
+        
+        if os.path.isdir(location):
+            files = [y for x in os.walk(location) for y in glob(os.path.join(x[0], '*.csv'))]
+            if header is None:
+                df = pd.concat([pd.read_csv(os.path.join(location, f), header=header) for f in files])
+            else:
+                df = pd.concat([pd.read_csv(os.path.join(location, f)) for f in files])
     
-    anti = pd.read_csv(anti)
-    anti = anti.drop_duplicates(subset=['seq'])
+        else:
+            if header is None:
+                df = pd.read_csv(location, header=header)
+            else:
+                df = pd.read_csv(location)
+    
+        if header is None:
+            df.columns = ['seq', None]
+        return df.drop_duplicates(subset=['seq'])
+    
+    header = 1 if 'LynD' in sel else None
+
+    sel = get_df(sel, header)
+    anti = get_df(anti, header)
 
     # find intersecting seqs and remove them as unreliable
     intersect = np.intersect1d(anti.seq.values, sel.seq.values)
     sel = sel.loc[~sel.seq.isin(intersect)].reset_index(drop=True)
     anti = anti.loc[~anti.seq.isin(intersect)].reset_index(drop=True)
     
-    # extract variable-region sequence for modeling
-    sel['var_seq'] = sel.seq.str[22:25] + sel.seq.str[26:29]
-    anti['var_seq'] = anti.seq.str[22:25] + anti.seq.str[26:29]
-    
     print('Curated dataset sizes:\nSelection:\t', sel.shape[0], '\nAntiselection:\t', anti.shape[0])
     return sel, anti
 
 
-def featurize(sel, anti):
+def featurize(sel, anti, vr=None):
     """Combine and featurize dataset into sklearn-compatible format"""
     
-    # extract variable region sequence
-    sel['var_seq'] = sel.seq.str[22:25] + sel.seq.str[26:29]
-    anti['var_seq'] = anti.seq.str[22:25] + anti.seq.str[26:29]
-    
+    if vr is None:
+        sel['var_seq'] = sel['seq']
+        anti['var_seq'] = anti['seq']
+    else:
+        for df in (sel, anti):
+            seqs = []
+            for full_str in df.seq.values:
+                s = [full_str[v_i: v_i + 1] for v_i in vr]
+                seqs.append(''.join(s))
+            df['var_seq'] = seqs
+            
     # label active/inactive splits
     sel['active'] = 1
     anti['active'] = 0
     
-    # combine into a single dataset
-    df = pd.concat([sel, anti], axis=0).reset_index(drop=True)
-    return df
+    sel = sel.loc[~sel['var_seq'].str.contains('X')]
+    anti = anti.loc[~anti['var_seq'].str.contains('X')]
 
+    # combine into a single dataset
+    return pd.concat([sel, anti], axis=0).reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    ds = SequenceDataset(sele='/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/data/csv/NNK7/rd2/sele', 
+                         anti='/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/data/csv/NNK7/rd2/anti', 
+                         features='onehot', 
+                         variable_region=[14, 15, 16, 17, 18, 19, 20, 21])
+
+    # grab those w/C in positions 1-4
+    sub = ds.df.loc[ds.df.var_seq.str[0:4].str.count('C') == 1]
+    
+    # calculate fraction of sel/anti
+    print(sub.head)
+    print(sub.active.value_counts())
+    print('=' * 50)
+    # grab those with a SECOND C
+    sub = ds.df.loc[ds.df.var_seq.str[0:4].str.count('C') > 1]
+    print(sub.head)
+    print(sub.active.value_counts())
+    

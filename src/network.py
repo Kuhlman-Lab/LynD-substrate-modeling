@@ -7,20 +7,26 @@ import math
 
 def load_model(args):
     """Load specified model for training"""
+    
+    VAR_LENGTH = len(args.variable_region)
 
     if args.model == 'MLP': 
         if args.features == 'onehot':
-            input_dim = 120
+            input_dim = 20 * VAR_LENGTH
             embed = False
         elif args.features == 'continuous':
-            input_dim = 128 * 6
+            input_dim = 128 * VAR_LENGTH
             embed = True
         elif args.features == 'ECFP':
-            input_dim = 1248
+            input_dim = 208 * VAR_LENGTH
+            embed = False
+        elif args.features == 'ESM':
+            input_dim = 1280 * (1 + VAR_LENGTH)
             embed = False
         else:
             raise ValueError("Invalid feature set")
-        model = MLP(num_in=input_dim, num_inter=128, num_out=1, num_layers=3,  embed=embed,)
+        # model = MLP(num_in=input_dim, num_inter=512, num_out=1, num_layers=10,  embed=embed, dropout=0., var_length=args.var_length)
+        model = MLP(num_in=input_dim, num_inter=128, num_out=1, num_layers=3,  embed=embed, dropout=0.1, var_length=VAR_LENGTH)
 
     elif args.model == 'CNN':
 
@@ -190,13 +196,13 @@ def get_act_fxn(act: str):
 
 class MLP(nn.Module):
     def __init__(self, num_in, num_inter, num_out, num_layers, 
-    act='relu', bias=True, embed=False, dropout=0.):
+    act='relu', bias=True, embed=False, dropout=0., var_length=6):
         super().__init__()
         
         # Learnable embedding layer
         self.embed = embed
         if self.embed:
-           self.W_e = nn.Embedding(20, num_in // 6)
+           self.W_e = nn.Embedding(20, num_in // var_length)
 
         # Linear layers for MLP
         self.W_in = nn.Linear(num_in, num_inter, bias=bias)

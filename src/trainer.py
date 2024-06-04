@@ -1,4 +1,3 @@
-
 import sys
 import wandb
 import argparse
@@ -8,11 +7,15 @@ import torch.nn.functional as F
 
 from torch.utils.data import DataLoader, random_split
 
+# import lightning as pl
+# from pl.callbacks import ModelCheckpoint
+# from py.loggers import CSVLogger
+
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger
 
-from torchmetrics.classification import BinaryAccuracy
+from torchmetrics.classification import BinaryAccuracy, Accuracy
 from torchmetrics import AUROC
 
 from dataset import SequenceDataset
@@ -21,7 +24,8 @@ from network import load_model
 
 def clf_metrics():    
     return {
-        "accuracy": BinaryAccuracy()
+        "accuracy": BinaryAccuracy(), 
+        "balanced_accuracy": Accuracy(task='multiclass', num_classes=2, average='macro')
     }
 
 
@@ -52,7 +56,10 @@ class SequenceModelPL(pl.LightningModule):
         loss = F.binary_cross_entropy(preds, targets.to(torch.float32))
         
         for name, metric in self.metrics[f"{prefix}_metrics"].items():
-            metric.update(preds, targets)
+            if name == 'balanced_accuracy':
+                metric.update(torch.round(preds), targets)
+            else:
+                metric.update(preds, targets)
 
         for name, metric in self.metrics[f"{prefix}_metrics"].items():
             try:
@@ -81,16 +88,16 @@ class SequenceModelPL(pl.LightningModule):
 
 
 def train(args):
-    print('Starting training!', '=' * 50)
+    print('Starting training!', '\n', '=' * 50)
     print(args, '\n', '=' * 50)
     
     # load dataset and dataloader
-    train_dataset = SequenceDataset(args.sele, args.anti, features=args.features)
+    train_dataset = SequenceDataset(args.sele, args.anti, features=args.features, variable_region=args.variable_region, filter_seq=args.filter_seq)
     generator = torch.Generator()
     if args.seed != -1:
         generator = generator.manual_seed(args.seed)
     
-    train_dataset, val_dataset, _ = random_split(train_dataset, lengths=(0.8, 0.1, 0.1))
+    train_dataset, val_dataset, _ = random_split(train_dataset, lengths=(0.8, 0.1, 0.1), generator=generator)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.cpus, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.cpus, shuffle=False)
 
@@ -106,7 +113,7 @@ def train(args):
         
     # load trainer and fit model
     trainer = pl.Trainer(max_epochs=args.epochs, accelerator='gpu', devices=1, 
-                         callbacks=[checkpoint_callback], logger=logger, log_every_n_steps=10)
+                         callbacks=[checkpoint_callback], logger=logger, log_every_n_steps=10, limit_train_batches=args.frac)
     trainer.fit(model, train_loader, val_loader)    
     
     return
@@ -127,8 +134,10 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, help='batch size for training', default=2048)
     parser.add_argument('--epochs', type=int, help='training epochs', default=5)
     parser.add_argument('--learning_rate', type=float, help='initial network learning rate', default=1e-3)
-    parser.add_argument('--features', type=str, 
-    help='which features to use (onehot, continuous, or ECFP)', default='onehot')
+    parser.add_argument('--features', type=str, help='which features to use (onehot, continuous, or ECFP)', default='onehot')
     parser.add_argument('--model', type=str, help='Which model type to use (MLP, )', default='MLP')
+    parser.add_argument('--frac', type=float, help='batch fraction for training', default=1.0)
+    parser.add_argument('--variable_region', nargs='+', type=int, help='list of variable region positions', default=None)
+    parser.add_argument('--filter_seq', type=str, default=None, help='sequence filtering criteria (e.g., C1-4 means remove any seqs with Cys in position 1-4)')
     train(parser.parse_args())
 

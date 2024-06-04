@@ -118,6 +118,10 @@ def supervised(X_train, X_test, Y_train, Y_test, model='logreg'):
     clf = models[model]
     clf.fit(X_train, Y_train)
     
+    if model == 'logreg':
+        feat_coef = clf.coef_
+        np.save('coef.npz', feat_coef)
+
     Y_pred = clf.predict(X_test)
     met_dict = metrics(Y_test, Y_pred)
     return met_dict
@@ -159,6 +163,8 @@ def main():
         'ada', 
         'mlp'
     ]
+
+    model_list = ['logreg']
 
     for model in model_list:
         print('Running model %s' % model)
