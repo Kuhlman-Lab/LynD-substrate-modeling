@@ -8,14 +8,12 @@ from ecfp import dense_morgan
 
 
 class SequenceDataset(torch.utils.data.Dataset):
-    """Dataset class for LynD Sequence Data"""
-    
+    """Dataset class for training on LynD Sequence Data"""
     def __init__(self, sele, anti, features='onehot', variable_region=None, filter_seq=None):
-        
         # load dataframes and remove duplicates and overlap
         sele_df, anti_df = import_data(sele, anti)
         self.features = features
-       
+
         # featurize and combine dataframes
         # variable_region = [[22, 25], [26, 29]] if 'LynD' in sele else None # use variable region to extract as needed
         self.df = featurize(sele_df, anti_df, vr=variable_region)
@@ -57,15 +55,8 @@ class SequenceDataset(torch.utils.data.Dataset):
             features = torch.gather(self.matrix, 0, idx_list) # [6, 208]
             features = features.to(torch.float32) # [6, 208]
 
-        elif self.features == 'ESM':
-            # load from custom filepath
-            cpath = '/work/users/d/i/dieckhau/LynD-embeddings/full'
-            for aa in seq:
-                cpath = os.path.join(cpath, aa)
-            cpath = os.path.join(cpath, 'emb.pt')
-            # trim out any missing seq info
-            features = torch.load(cpath) # [7, 1280]
-
+        else:
+            raise ValueError(f"Invalid feature set {self.features} selected!")
         return features, sample.active
 
     def _filter_seq(self, filter_seq='C1-4'):
@@ -80,6 +71,7 @@ class SequenceDataset(torch.utils.data.Dataset):
 
 
 class LibraryDataset(torch.utils.data.Dataset):
+    """Sequence library dataset for nomination purposes."""
     def __init__(self, x, features='onehot'):
                 
         self.X = x  # should be array [N, L] where N is number of peptides and L is constant peptide length
@@ -118,12 +110,14 @@ class LibraryDataset(torch.utils.data.Dataset):
             features = torch.gather(self.matrix, 0, idx_list) # [6, 208]
             features = features.to(torch.float32) # [6 x 208]
 
+        else:
+            raise ValueError(f"Invalid feature set {self.features} selected!")
         return features
             
      
 def import_data(sel='../../data/csv/A3_Sup_pos_LynD_R1_001.csv', 
                 anti='../../data/csv/A5_Elu_pos_LynD_R1_001.csv', var_region=None):
-    """Import and curate data for modeling"""    
+    """Import and curate data for modeling use. Combines multiple CSVs (sets of reads) if compatible."""    
     def get_df(location, header=None):
         """Load file or, if dir, grab all files in all subdirectories recursively"""
         
@@ -159,8 +153,7 @@ def import_data(sel='../../data/csv/A3_Sup_pos_LynD_R1_001.csv',
 
 
 def featurize(sel, anti, vr=None):
-    """Combine and featurize dataset into sklearn-compatible format"""
-    
+    """Combine and featurize dataset into model-compatible format"""
     if vr is None:
         sel['var_seq'] = sel['seq']
         anti['var_seq'] = anti['seq']
@@ -175,29 +168,8 @@ def featurize(sel, anti, vr=None):
     # label active/inactive splits
     sel['active'] = 1
     anti['active'] = 0
-    
     sel = sel.loc[~sel['var_seq'].str.contains('X')]
     anti = anti.loc[~anti['var_seq'].str.contains('X')]
 
     # combine into a single dataset
     return pd.concat([sel, anti], axis=0).reset_index(drop=True)
-
-
-if __name__ == "__main__":
-    ds = SequenceDataset(sele='/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/data/csv/NNK7/rd2/sele', 
-                         anti='/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/data/csv/NNK7/rd2/anti', 
-                         features='onehot', 
-                         variable_region=[14, 15, 16, 17, 18, 19, 20, 21])
-
-    # grab those w/C in positions 1-4
-    sub = ds.df.loc[ds.df.var_seq.str[0:4].str.count('C') == 1]
-    
-    # calculate fraction of sel/anti
-    print(sub.head)
-    print(sub.active.value_counts())
-    print('=' * 50)
-    # grab those with a SECOND C
-    sub = ds.df.loc[ds.df.var_seq.str[0:4].str.count('C') > 1]
-    print(sub.head)
-    print(sub.active.value_counts())
-    

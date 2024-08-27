@@ -1,28 +1,22 @@
-import sys
-import wandb
 import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from torch.utils.data import DataLoader, random_split
-
-# import lightning as pl
-# from pl.callbacks import ModelCheckpoint
-# from py.loggers import CSVLogger
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger
-
 from torchmetrics.classification import BinaryAccuracy, Accuracy
-from torchmetrics import AUROC
 
 from dataset import SequenceDataset
 from network import load_model
 
 
-def clf_metrics():    
+def clf_metrics():
+    """
+    Classification metrics for logging and checkpoint selection.
+    """  
     return {
         "accuracy": BinaryAccuracy(), 
         "balanced_accuracy": Accuracy(task='multiclass', num_classes=2, average='macro')
@@ -36,10 +30,8 @@ class SequenceModelPL(pl.LightningModule):
         self.model = load_model(args)
         print('Model:\n', self.model, '\n', '=' * 50)
         self.args = args
-        
         self.learn_rate = self.args.learning_rate
         self.dev = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
-        
         self.metrics = nn.ModuleDict()
         for split in ("train_metrics", "val_metrics"):
             self.metrics[split] = nn.ModuleDict()
@@ -86,7 +78,6 @@ class SequenceModelPL(pl.LightningModule):
         return opt
 
 
-
 def train(args):
     print('Starting training!', '\n', '=' * 50)
     print(args, '\n', '=' * 50)
@@ -106,19 +97,17 @@ def train(args):
         
     # additional params, logging, checkpoints for training
     filename = args.run + '_{epoch:02d}_{val_accuracy:.02}'
-    monitor = f'val_accuracy'
+    monitor = 'val_accuracy'
         
     checkpoint_callback = ModelCheckpoint(monitor=monitor, mode='max', dirpath='checkpoints', filename=filename)
     logger = CSVLogger(save_dir='./logs', name=args.run)
         
     # load trainer and fit model
-    trainer = pl.Trainer(max_epochs=args.epochs, accelerator='gpu', devices=1, 
-                         callbacks=[checkpoint_callback], logger=logger, log_every_n_steps=10, limit_train_batches=args.frac)
+    trainer = pl.Trainer(max_epochs=args.epochs, accelerator='gpu', devices=1,
+                          callbacks=[checkpoint_callback], logger=logger, log_every_n_steps=10, 
+                          limit_train_batches=args.frac)
     trainer.fit(model, train_loader, val_loader)    
-    
     return
-
-
 
 
 if __name__ == "__main__":
@@ -132,7 +121,7 @@ if __name__ == "__main__":
     parser.add_argument('--cpus', type=int, help='Total CPUs to use for workers', default=8)
     parser.add_argument('--seed', type=int, help='random seed for dataset splits', default=-1)
     parser.add_argument('--batch_size', type=int, help='batch size for training', default=2048)
-    parser.add_argument('--epochs', type=int, help='training epochs', default=5)
+    parser.add_argument('--epochs', type=int, help='training epochs', default=50)
     parser.add_argument('--learning_rate', type=float, help='initial network learning rate', default=1e-3)
     parser.add_argument('--features', type=str, help='which features to use (onehot, continuous, or ECFP)', default='onehot')
     parser.add_argument('--model', type=str, help='Which model type to use (MLP, )', default='MLP')

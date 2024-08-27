@@ -20,12 +20,8 @@ def load_model(args):
         elif args.features == 'ECFP':
             input_dim = 208 * VAR_LENGTH
             embed = False
-        elif args.features == 'ESM':
-            input_dim = 1280 * (1 + VAR_LENGTH)
-            embed = False
         else:
             raise ValueError("Invalid feature set")
-        # model = MLP(num_in=input_dim, num_inter=512, num_out=1, num_layers=10,  embed=embed, dropout=0., var_length=args.var_length)
         model = MLP(num_in=input_dim, num_inter=128, num_out=1, num_layers=3,  embed=embed, dropout=0.1, var_length=VAR_LENGTH)
 
     elif args.model == 'CNN':

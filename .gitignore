@@ -2,12 +2,17 @@ data/**
 
 src/__pycache__
 src/logs/
-src/runscripts/
 
 src/checkpoints/
 src/lightning_logs/
+
+src/archived/
 
 **/.ipynb_checkpoints/**
 *.pyc
 
 **/__pycache__/**
+
+*.png
+*.csv
+*.svg

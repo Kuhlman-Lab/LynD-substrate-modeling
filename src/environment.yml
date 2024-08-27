@@ -1,0 +1,20 @@
+name: LynD
+channels:
+- pytorch
+- nvidia
+- conda-forge
+- defaults
+dependencies:
+  - pytorch=*=*cuda*
+  - pytorch-cuda=11.7
+  - torchvision=*=*cu*
+  - torchaudio=*=*cu*
+  - torchmetrics
+  - pytorch-lightning
+  - wandb
+  - tqdm
+  - pandas
+  - numpy
+  - python==3.10
+  - joblib
+  - cudatoolkit=11.3
