@@ -31,7 +31,7 @@ mamba install pytorch=2.1 torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c
 ```
 Install other dependencies:
 ```
-mamba install -c conda-forge omegaconf "numpy<2.0" wandb tqdm pandas torchmetrics pytorch-lightning
+mamba install -c conda-forge omegaconf "numpy<2.0" wandb tqdm pandas torchmetrics pytorch-lightning matplotlib
 ```
 
 ## Training

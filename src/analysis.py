@@ -270,7 +270,7 @@ def plot_dist(args):
     combined['S Score Percentile'] = combined['S Score'].rank(pct=True)
     print(combined)
     combined.to_csv('Sscore_perc.csv')
-    make hist plots (maybe use percentile scale)
+    # make hist plots (maybe use percentile scale)
 
     import seaborn as sns
     # sns.histplot(combined, x='S Score', hue='Activity', stat='density')
