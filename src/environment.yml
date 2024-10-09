@@ -18,3 +18,5 @@ dependencies:
   - python==3.10
   - joblib
   - cudatoolkit=11.3
+  - omegaconf
+  - mkl==2024.0

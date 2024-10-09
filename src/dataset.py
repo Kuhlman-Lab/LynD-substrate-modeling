@@ -15,7 +15,6 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.features = features
 
         # featurize and combine dataframes
-        # variable_region = [[22, 25], [26, 29]] if 'LynD' in sele else None # use variable region to extract as needed
         self.df = featurize(sele_df, anti_df, vr=variable_region)
 
         if filter_seq is not None:

@@ -75,7 +75,7 @@ def screen_routine(args, N=10000, thresh=0.5, H=2, save=False, length=6, filter=
     # sample N random peptides
     from ecfp import constants
     np.random.seed(args.seed)
-    # TODO constrain to always include 1 Cys
+
     if args.include_C: 
        library = sample_random_peptides_wCys(n=N, length=length, amino_acids=constants.aas)
     elif bias is not None:
@@ -84,7 +84,6 @@ def screen_routine(args, N=10000, thresh=0.5, H=2, save=False, length=6, filter=
     else:
         library = sample_random_peptides(n=N, length=length, amino_acids=constants.aas)
 
-    # TODO filter based on filter arg if present
     if filter is not None:
         aa = filter[0]
         n = int(filter[1:]) - 1
@@ -93,7 +92,6 @@ def screen_routine(args, N=10000, thresh=0.5, H=2, save=False, length=6, filter=
         print(library[:5])
 
     # NOTE: custom filter for removing extra Cys or doing other custom filtering (e.g., Cys position)
-    # custom filter to remove any w/more than N cys
     # n_C = 0
     # ncys_flags = [''.join(li).count('C') > n_C for li in library]
 
@@ -120,54 +118,48 @@ def screen_routine(args, N=10000, thresh=0.5, H=2, save=False, length=6, filter=
             library = library[pred_list < thresh, :]
             pred_list = pred_list[pred_list < thresh]
         print('%s peptides passed predicted activity threshold' % str(library.shape[0]))    
-
-    return library, pred_list
     
     # filter peptides by hamming distance - lower value is more similar
-    # if H > 0:
-    #     # load training data
-    #     ref = SequenceDataset(sele=args.sele, 
-    #                             anti=args.anti, 
-    #                             features='onehot', 
-    #                             variable_region=args.variable_region)
+    if H > 0:
+        # load training data
+        ref = SequenceDataset(sele=args.sele, 
+                                anti=args.anti, 
+                                features='onehot', 
+                                variable_region=args.variable_region)
         
-    #     training_peptides = ref.df.var_seq.values.astype('str')
-    #     training_peptides = np.array([ list(word) for word in training_peptides ])
+        training_peptides = ref.df.var_seq.values.astype('str')
+        training_peptides = np.array([ list(word) for word in training_peptides ])
         
-    #     flag = []
-    #     min_H = []
-    #     closest_seq = []
-    #     for pep in tqdm(library):
-    #         distances = hamming_distance(P=training_peptides, pep=pep, return_distance=True)
-    #         print(training_peptides)
-    #         print(pep)
-    #         quit()
-    #         # matches.shape array [N, ] of distances between query peptide pep and every member of dataset P
-    #         min_dist = np.min(distances)
-    #         flag.append(min_dist > H)
-    #         min_H.append(min_dist)
-    #         # TODO add most similar seq to each example
-    #         sim_seq = training_peptides[np.argmin(distances), :]
-    #         closest_seq.append(sim_seq)
+        flag = []
+        min_H = []
+        closest_seq = []
+        for pep in tqdm(library):
+            distances = hamming_distance(P=training_peptides, pep=pep, return_distance=True)
+            min_dist = np.min(distances)
+            flag.append(min_dist > H)
+            min_H.append(min_dist)
+            # add most similar seq to each example
+            sim_seq = training_peptides[np.argmin(distances), :]
+            closest_seq.append(sim_seq)
             
-    #     library = library[flag, :]
-    #     pred_list = pred_list.detach().numpy()[flag]
-    #     min_H = np.array(min_H)[flag]
-    #     closest_seq = np.array(closest_seq)[flag]
-    #     print('%s peptides passed Hamming distance threshold (H > %s)' % (str(library.shape[0]), str(H)))
+        library = library[flag, :]
+        pred_list = pred_list.detach().numpy()[flag]
+        min_H = np.array(min_H)[flag]
+        closest_seq = np.array(closest_seq)[flag]
+        print('%s peptides passed Hamming distance threshold (H > %s)' % (str(library.shape[0]), str(H)))
 
-    # if save:
-    #     library = np.array([''.join(li) for li in library])
-    #     closest_seq = np.array([''.join(cs) for cs in closest_seq])
-    #     df = pd.DataFrame({
-    #         'seq': library, 
-    #         'predicted_activity': pred_list,
-    #         'min_training_seq_hamming_dist': min_H, 
-    #         'most_similar_training_seq': closest_seq
-    #     })
-    #     df.to_csv('library.csv', index_label='index')
-    # else:
-    #     return library, pred_list
+    if save:
+        library = np.array([''.join(li) for li in library])
+        closest_seq = np.array([''.join(cs) for cs in closest_seq])
+        df = pd.DataFrame({
+            'seq': library, 
+            'predicted_activity': pred_list,
+            'min_training_seq_hamming_dist': min_H, 
+            'most_similar_training_seq': closest_seq
+        })
+        df.to_csv('library.csv', index_label='index')
+    else:
+        return library, pred_list
 
 
 def threshold_test(args):
@@ -176,101 +168,96 @@ def threshold_test(args):
     full_dataset = SequenceDataset(sele=args.sele, anti=args.anti, features=args.features, variable_region=args.variable_region)
     
     # split dataset - replicate training splits
-    # seed = 1234 # hardcoded, copied from training script
-    # generator = torch.Generator()
-    # generator = generator.manual_seed(seed)
-    # train_dataset, val_dataset, test_dataset = random_split(full_dataset, lengths=(0.8, 0.1, 0.1), generator=generator)
-    # test_loader = DataLoader(test_dataset, batch_size=2048, num_workers=8, shuffle=False)
+    seed = args.seed # should match training script for consistency
+    generator = torch.Generator()
+    generator = generator.manual_seed(seed)
+    train_dataset, val_dataset, test_dataset = random_split(full_dataset, lengths=(0.8, 0.1, 0.1), generator=generator)
+    test_loader = DataLoader(test_dataset, batch_size=2048, num_workers=8, shuffle=False)
     
-    # # screen test set by model score
-    # model = SequenceModelPL.load_from_checkpoint(args.ckpt, args=args).model
-    # model = model.to('cuda')
-    # model.eval()
+    # screen test set by model score
+    model = SequenceModelPL.load_from_checkpoint(args.ckpt, args=args).model
+    model = model.to('cuda')
+    model.eval()
 
-    # pred_list = []
-    # for batch in tqdm(test_loader):
-    #     batch, _ = batch # drop true activity
-    #     batch = batch.to('cuda') 
-    #     preds = model(batch)
-    #     preds = torch.squeeze(preds, -1)
-    #     pred_list.append(preds.to('cpu')) 
-    # pred_list = torch.cat(pred_list, dim=0).to('cpu')
+    pred_list = []
+    for batch in tqdm(test_loader):
+        batch, _ = batch # drop true activity
+        batch = batch.to('cuda') 
+        preds = model(batch)
+        preds = torch.squeeze(preds, -1)
+        pred_list.append(preds.to('cpu')) 
+    pred_list = torch.cat(pred_list, dim=0).to('cpu')
 
-    # thresholds = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]
-    # ppvs, passed = [], []
-    # true_activity = torch.tensor([test_dataset.dataset.df.active[i] for i in test_dataset.indices]).to('cpu')
+    thresholds = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]
+    ppvs, passed = [], []
+    true_activity = torch.tensor([test_dataset.dataset.df.active[i] for i in test_dataset.indices]).to('cpu')
 
-    # for thresh in thresholds:
-    #     # calculate range of PPVs
-    #     true_pos = torch.sum(true_activity[pred_list > thresh])
-    #     pred_pos = (true_activity[pred_list > thresh]).numel()
-    #     ppvs.append((true_pos / pred_pos).item())
-    #     passed.append(pred_pos)
+    for thresh in thresholds:
+        # calculate range of PPVs
+        true_pos = torch.sum(true_activity[pred_list > thresh])
+        pred_pos = (true_activity[pred_list > thresh]).numel()
+        ppvs.append((true_pos / pred_pos).item())
+        passed.append(pred_pos)
 
-    # print(len(passed), len(thresholds), len(ppvs))
+    print(len(passed), len(thresholds), len(ppvs))
 
     # # get S score from training set and percentile convert it, then re-run PPV tests
 
-    # train_df = train_dataset.dataset.df.iloc[train_dataset.indices]
-    # # print(train_df.active.value_counts())
-    # sel_df = train_df.loc[train_df.active.astype(bool)]
-    # anti_df = train_df.loc[~train_df.active.astype(bool)]
-    # # y_star = y_star_score(sel_df, anti_df) # fit to training set
-    # # np.save('ystar.npy', y_star)
+    train_df = train_dataset.dataset.df.iloc[train_dataset.indices]
+    sel_df = train_df.loc[train_df.active.astype(bool)]
+    anti_df = train_df.loc[~train_df.active.astype(bool)]
+    y_star = y_star_score(sel_df, anti_df) # fit to training set
 
-    # y_star = np.load('ystar.npy')
+    test_df = test_dataset.dataset.df.iloc[test_dataset.indices]
+    ssc = s_score(test_df, y_star) # apply to test set
 
-    # test_df = test_dataset.dataset.df.iloc[test_dataset.indices]
-    # # ssc = s_score(test_df, y_star) # apply to test set
-    # # np.save('sscore.npy', ssc)
+    test_activity = test_df.active
+    test_sscore = np.load('sscore.npy')
+    ppv_sscore, passed_sscore = [] , []
+    for thresh in thresholds:
+        perc = np.percentile(test_sscore, q=thresh * 100.) 
+        print(perc)
+        pred_hits = test_activity[test_sscore > perc] # grab those with passed S score
+        true_hits = pred_hits[test_activity.astype(bool)]
+        print(pred_hits, true_hits)
+        ppv_sscore.append(true_hits.shape[0] / pred_hits.shape[0])
+        passed_sscore.append(pred_hits.shape[0])
 
-    # test_activity = test_df.active
-    # test_sscore = np.load('sscore.npy')
-    # ppv_sscore, passed_sscore = [] , []
-    # for thresh in thresholds:
-    #     perc = np.percentile(test_sscore, q=thresh * 100.) 
-    #     print(perc)
-    #     pred_hits = test_activity[test_sscore > perc] # grab those with passed S score
-    #     true_hits = pred_hits[test_activity.astype(bool)]
-    #     print(pred_hits, true_hits)
-    #     ppv_sscore.append(true_hits.shape[0] / pred_hits.shape[0])
-    #     passed_sscore.append(pred_hits.shape[0])
+    disp  = pd.DataFrame({
+    'Sequences Passed (Model)': passed, 
+    'Sequences Passed (S Score)': passed_sscore,
+    'Threshold': thresholds, 
+    'PPV (Model)': ppvs, 
+    'PPV (S Score)': ppv_sscore
+    })
 
-    # disp  = pd.DataFrame({
-    # 'Sequences Passed (Model)': passed, 
-    # 'Sequences Passed (S Score)': passed_sscore,
-    # 'Threshold': thresholds, 
-    # 'PPV (Model)': ppvs, 
-    # 'PPV (S Score)': ppv_sscore
-    # })
-
-    # disp.to_csv('disp.csv')
+    disp.to_csv('PPV_model_vs_Sscore.csv')
     # disp = pd.read_csv('disp.csv')
-    # print(disp)
 
     # twin plot seq and threshold for PPV and Model
-    # ax = disp.plot(x='Threshold', y='Sequences Passed (Model)', legend=False, color='steelblue', marker='s', linestyle='--')
-    # ax = disp.plot(x='Threshold', y='Sequences Passed (S Score)', legend=False, color='darkslategrey', marker='o', ax=ax, linestyle='--')
+    ax = disp.plot(x='Threshold', y='Sequences Passed (Model)', legend=False, color='steelblue', marker='s', linestyle='--')
+    ax = disp.plot(x='Threshold', y='Sequences Passed (S Score)', legend=False, color='darkslategrey', marker='o', ax=ax, linestyle='--')
 
-    # ax2 = ax.twinx()
-    # disp.plot(x='Threshold', y='PPV (Model)', ax=ax2, legend=False, color='olive', marker='s')
-    # disp.plot(x='Threshold', y='PPV (S Score)', ax=ax2, legend=False, color='darkolivegreen', marker='o')
+    ax2 = ax.twinx()
+    disp.plot(x='Threshold', y='PPV (Model)', ax=ax2, legend=False, color='olive', marker='s')
+    disp.plot(x='Threshold', y='PPV (S Score)', ax=ax2, legend=False, color='darkolivegreen', marker='o')
 
-    # plt.title('NNK7 Library rd3\n')
-    # ax.set_ylabel('Sequences Passed')
-    # ax2.set_ylabel('PPV (%)')
-    # ax.set_xlabel('Threshold')
-    # plt.gcf().subplots_adjust(left=0.15)
-    # ax.figure.legend(loc='lower center')
-    # plt.savefig('NNK7-rd3-Sscore-PPV.pdf')
-    # plt.show()
+    plt.title('NNK7 Library rd3\n')
+    ax.set_ylabel('Sequences Passed')
+    ax2.set_ylabel('PPV (%)')
+    ax.set_xlabel('Threshold')
+    plt.gcf().subplots_adjust(left=0.15)
+    ax.figure.legend(loc='lower center')
+    plt.savefig('NNK7-rd3-Sscore-PPV.pdf')
+    plt.show()
 
-    # --------------- #
+
+def plot_dist(args):
+    full_dataset = SequenceDataset(sele=args.sele, anti=args.anti, features=args.features, variable_region=args.variable_region)
     # make S score distribution plot
     df = full_dataset.df
     sel_df = df.loc[df.active.astype(bool)]
     anti_df = df.loc[~df.active.astype(bool)]
-    # # np.save('ystar_full.npy', y_star)
 
     y_star = np.load('ystar_full.npy')
 
@@ -283,7 +270,7 @@ def threshold_test(args):
     combined['S Score Percentile'] = combined['S Score'].rank(pct=True)
     print(combined)
     combined.to_csv('Sscore_perc.csv')
-    # make hist plots (maybe use percentile scale)
+    make hist plots (maybe use percentile scale)
 
     import seaborn as sns
     # sns.histplot(combined, x='S Score', hue='Activity', stat='density')
@@ -306,28 +293,14 @@ def main(args):
     # generate N random peptides and use them to calculate epistasis constants
     elif args.routine == 'epistasis':
 
-        # TODO retrieve real library and use that for epi calc
         # REAL DATA ---------
         ref = SequenceDataset(sele=args.sele, anti=args.anti, features=args.features, variable_region=args.variable_region)
         library = ref.df.var_seq.values.astype('str')
         library = np.array([list(word) for word in library])
         library = convert_seq_to_idx(library)
 
-        # TODO filter based on filter arg if present
-        # filter = 'C5'
-        # if filter is not None:
-        #     aa = filter[0]
-        #     n = int(filter[1:]) - 1
-        #     filter_flag = np.array([seq[n] == aa for seq in library])
-        #     library = library[filter_flag]
-        #     preds = ref.df.active.values[filter_flag]
-        #     print('Library filtered according to %s down to %s sequences' % (filter, str(len(library))))
-        #     print(library[:5])
-
-        # library = library[ref.df.active == 1] # keep only selection part of the library?
-
         print(library.shape)
-        # get frequency tables out
+        # get frequency tables out for epi random calculation
         freqs = np.zeros((20, 8), dtype=float)
         for i in range(library.shape[1]):
             u, counts = np.unique(library[:, i], return_counts=True)
@@ -337,7 +310,7 @@ def main(args):
         # epi = compute_pairwise_epistasis_exp(library)
 
         # SIMULATED DATA --------
-        N = 10000000
+        N = 10_000_000
         library, preds = screen_routine(args, H=-1, N=N, thresh=-1, length=VAR_LENGTH, filter=args.filter_seq, bias=freqs) # use frequency table to make substrates!
 
         # check for at least one Cys
@@ -350,16 +323,11 @@ def main(args):
             flag.append(tmp)
         library = library[flag, :]
         preds = preds[flag]
-        
-        # TODO keep only those with high enough scores???
-        # library = library[preds > 0.5, :]
-        # preds = preds[preds > 0.5]
 
         library = convert_seq_to_idx(library)
         print('Library size for epi calculation:', preds.shape)
 
         epi, proba = compute_pairwise_epistasis(library, preds)
-        print(epi.shape)
         np.save(args.npy, epi)
 
         # plot epistasis of positions vs positions

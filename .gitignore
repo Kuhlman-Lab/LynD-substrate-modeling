@@ -1,4 +1,4 @@
-data/**
+data/
 
 src/__pycache__
 src/logs/
@@ -10,6 +10,8 @@ src/archived/
 
 **/.ipynb_checkpoints/**
 *.pyc
+
+*.DS_Store
 
 **/__pycache__/**
 
