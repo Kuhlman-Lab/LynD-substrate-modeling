@@ -9,7 +9,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from ecfp import constants
+from modules.ecfp import constants
 from matplotlib import rcParams
 
 rcParams['font.family'] = 'sans-serif'

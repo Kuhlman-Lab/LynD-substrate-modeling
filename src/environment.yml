@@ -20,3 +20,4 @@ dependencies:
   - cudatoolkit=11.3
   - omegaconf
   - mkl==2024.0
+  - seaborn

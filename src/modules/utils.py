@@ -1,5 +1,5 @@
 import numpy as np
-from ecfp import constants
+from modules.ecfp import constants
 
 
 def convert_seq_to_idx(library):

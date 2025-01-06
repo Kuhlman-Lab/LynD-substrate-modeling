@@ -1,0 +1,6 @@
+README.md
+pyproject.toml
+LynDML.egg-info/PKG-INFO
+LynDML.egg-info/SOURCES.txt
+LynDML.egg-info/dependency_links.txt
+LynDML.egg-info/top_level.txt

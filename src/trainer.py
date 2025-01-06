@@ -9,8 +9,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger
 from torchmetrics.classification import BinaryAccuracy, Accuracy
 
-from dataset import SequenceDataset
-from network import load_model
+from modules.dataset import SequenceDataset
+from modules.network import load_model
 
 
 def clf_metrics():
@@ -28,7 +28,6 @@ class SequenceModelPL(pl.LightningModule):
     def __init__(self, args):
         super().__init__()
         self.model = load_model(args)
-        # print('Model:\n', self.model, '\n', '=' * 50)
         self.args = args
         self.learn_rate = self.args.learning_rate
         self.dev = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")

@@ -4,7 +4,7 @@ import numpy as np
 import os
 from glob import glob
 import torch.nn.functional as F
-from ecfp import dense_morgan
+from modules.ecfp import dense_morgan
 
 
 class SequenceDataset(torch.utils.data.Dataset):

@@ -5,12 +5,22 @@ import torch
 import pandas as pd
 from torch.utils.data import DataLoader, random_split
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 
 from trainer import SequenceModelPL
-from dataset import LibraryDataset, SequenceDataset
-from utils import sample_random_peptides, hamming_distance, compute_pairwise_epistasis, convert_seq_to_idx, compute_pairwise_epistasis_exp
-from utils import sample_random_peptides_wCys, sample_random_peptides_biased
+from modules.dataset import LibraryDataset, SequenceDataset
+from modules.utils import (
+    sample_random_peptides, 
+    hamming_distance, 
+    compute_pairwise_epistasis, 
+    convert_seq_to_idx, 
+    compute_pairwise_epistasis_exp, 
+    sample_random_peptides_wCys, 
+    sample_random_peptides_biased
+)
+from modules.ecfp import constants
+from modules.Plotter import epistasis_bw_positions, positional_epistasis, pep_epistatic_interactions
+
 
 
 def s_score(df, y_star):
@@ -73,7 +83,7 @@ def screen_routine(args, N=10000, thresh=0.5, H=2, save=False, length=6, filter=
     model = model.to('cuda')
     model.eval()
     # sample N random peptides
-    from ecfp import constants
+    
     np.random.seed(args.seed)
 
     if args.include_C: 
@@ -272,7 +282,6 @@ def plot_dist(args):
     combined.to_csv('Sscore_perc.csv')
     # make hist plots (maybe use percentile scale)
 
-    import seaborn as sns
     # sns.histplot(combined, x='S Score', hue='Activity', stat='density')
     sns.histplot(combined, x='S Score Percentile', hue='Activity', stat='density')
     plt.savefig('SScore_dist_perc.pdf')
@@ -331,15 +340,12 @@ def main(args):
         np.save(args.npy, epi)
 
         # plot epistasis of positions vs positions
-        from Plotter import epistasis_bw_positions
         epistasis_bw_positions(epi, 'epi_bw_pos') # collapses along AA dim to get epi over each position
         
         # plot epistasis of amino acids vs amino acids for 2 specific positions
-        from Plotter import positional_epistasis
         positional_epistasis(epi, pos1=4, pos2=6, basename='epi_pos_5v7')
         
         # plot expected epistasis for a specific peptide
-        # from Plotter import pep_epistatic_interactions
         # pep_epistatic_interactions(epi, pep=np.array('ACLMCVTM'), basename='example_pep_epi')
         
     elif args.routine == 'threshold':
