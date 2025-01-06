@@ -13,7 +13,7 @@ from modules.utils import (
 )
 from trainer import SequenceModelPL
 from modules.dataset import LibraryDataset, SequenceDataset
-from modules.analysis import screen_routine
+from analysis import screen_routine
 from modules.ecfp import constants
 
 
@@ -310,22 +310,8 @@ if __name__ == "__main__":
             # 'XXFXSXCC', 
             # 'XXXASXCC', 
 
-            # 'WGFAXXCC', 
-            # 'XXXXSSCC', 
-
-            # 'WXFXXXCC', 
-            # 'XGXASSCC',
-
-            # 'XGXASXCC', 
-            # 'XGXAXSCC', 
-            # 'XGXXSSCC', 
-            # 'XXXASSCC',
-
-            # 'XGXASSCC',
-            # 'XXXXSSCC', 
-            # 'XXXAXSCC', 
-            # 'XGXXXSCC',
-            # 'WGFASXCC',
+            'WGFAXXCC', 
+            'XXXXSSCC',
 
             # 'XXXXXSCX', 
             # 'XXXXXSXC',
@@ -338,9 +324,12 @@ if __name__ == "__main__":
             # 'WGFASXCC', 
             # 'WGFASSXC', 
             # 'WGFASSCX',
-            
-            'XXXXSXCX',
-            'XXXXSXXC', 
+
+            # 'XXXXSSCC', 
+            # 'XXXASSCC', 
+            # 'XXFASSCC', 
+            # 'XGFASSCC', 
+            # 'WGFASSCC',
         ]
 
     }
