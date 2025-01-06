@@ -28,7 +28,7 @@ class SequenceModelPL(pl.LightningModule):
     def __init__(self, args):
         super().__init__()
         self.model = load_model(args)
-        print('Model:\n', self.model, '\n', '=' * 50)
+        # print('Model:\n', self.model, '\n', '=' * 50)
         self.args = args
         self.learn_rate = self.args.learning_rate
         self.dev = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")

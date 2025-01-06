@@ -1,27 +1,35 @@
 # LynD-substrate-modeling
 
-This repository contains the code, model weights, and raw data for the publication: TODO insert title
+This repository contains the code, model weights, and raw data for our paper on LynD substrate specificity ([Steude et al., 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618330v1)).
+
+## Citation
 
 If this code or model proves useful for you, please include the following citation in your work:
 ```
-TODO insert ref here
+@article {Steude2024.10.14.618330,
+	author = {Steude, Emma G. and Dieckhaus, Henry and Pelton, Jarrett M. and Kuhlman, Brian and Bowers, Albert A.},
+	title = {Assessing substrate scope of the cyclodehydratase LynD by mRNA display-enabled machine learning models},
+	year = {2024},
+	doi = {10.1101/2024.10.14.618330},
+	publisher = {Cold Spring Harbor Laboratory},
+	URL = {https://www.biorxiv.org/content/early/2024/10/14/2024.10.14.618330},
+	eprint = {https://www.biorxiv.org/content/early/2024/10/14/2024.10.14.618330.full.pdf},
+	journal = {bioRxiv}
+}
 ```
 
--------
+Note: While the model training and nomination code is original to this repo, we make heavy use of analysis and visualization functions from the [LazDEF analysis](https://github.com/avngrdv/mRNA-display-deep-learning.git) repository by Vinogradov et al. We have attempted to note where these tools are used/adapted throughout the source code. We thank the authors of this work for making these useful tools open-source and well-organized.
 
-Included:
+## Repo Contents:
 - Model weights for a LynD substrate specificity model trained on mRNA display data gathered on a semi-randomized NNK7 peptide library
 - Code for analyzing display data for patterns in substrate tolerance, epistasis, etc.
 - Raw data for rounds 1-3 for this assay
-
-Note: While the model training and nomination code is original to this repo, we make heavy use of analysis and visualization functions from the [LazDEF analysis](https://github.com/avngrdv/mRNA-display-deep-learning.git) repository by Vinogradov et al. We have attempted to note where these tools are used/adapted throughout the source code. We thank the authors of this work for making these useful tools open-source and well-organized.
 
 ## Installation
 
 We use Mamba to manage the necessary python dependencies:
 ```
 git clone git@github.com:Kuhlman-Lab/LynD-substrate-modeling.git
-
 mamba create -n LynD python=3.10
 mamba activate LynD
 ```
@@ -49,6 +57,7 @@ Inference and peptide nomination/filtering code is provided in ```src/nomination
 Several analysis functions are included in ```src/analysis.py``` and example inputs are provided in ```src/runscripts/analyze.sh```
 
 To screen a set of peptides based on activity threshold and Hamming distance constraints:
+```
 python analysis.py \
 	--features onehot \
 	--model MLP \
@@ -60,6 +69,7 @@ python analysis.py \
     --hamming 2 \
 	--sele /proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/datasets/rd3/sele/ \
 	--anti /proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/datasets/rd3/anti/
+```
 
 To calculate PPV curves for S score and model predictions on a given library:
 ```
@@ -76,6 +86,7 @@ python analysis.py \
 ```
 
 To calculate epistasis matrices for a semi-randomized library:
+```
 python analysis.py \
 	--features onehot \
 	--model MLP \
@@ -85,10 +96,12 @@ python analysis.py \
 	--include_C \
 	--sele /proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/datasets/rd3/sele/ \
 	--anti /proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/datasets/rd3/anti/
-
+```
 
 Calculation of percent-modification for semi-randomized peptide is provided in ```src/percent_modified.py```.
 
 ## Miscellaneous
 Exploratory data analysis including S-score and Y* score calculation is provided in ```src/eda/eda.ipynb```.
 
+## License
+This work is made available under an MIT license. See the LICENSE file for details.

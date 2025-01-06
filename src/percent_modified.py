@@ -271,11 +271,70 @@ peptide_sets = {
         'XWPXXCLC',
         'XXXXXCLX', 
         'XXXXXXLC'
+    ],
+    'WGFASSCC': [
+        # 'WGFASSCC', 
+
+        # 'XXXXXXCX', 
+        # 'XXXXXXXC', 
+        # 'XXXXXXCC', 
+
+        # 'WGFASSCX',
+        # 'WGFASSXC',
+        
+        # 'WXXXXXCC', 
+        # 'XGXXXXCC', 
+        # 'XXFXXXCC', 
+        # 'XXXAXXCC', 
+        # 'XXXXSXCC', 
+        # 'XXXXXSCC', 
+
+        # 'WXXXXSCC', 
+        # 'XGFASXCC', 
+
+        # 'XGFXXXCC', 
+        # 'XGXAXXCC', 
+        # 'XGXXSXCC', 
+        # 'XXFAXXCC', 
+        # 'XXFXSXCC', 
+        # 'XXXASXCC', 
+
+        # 'WGFAXXCC', 
+        # 'XXXXSSCC', 
+
+        # 'WXFXXXCC', 
+        # 'XGXASSCC',
+
+        # 'XGXASXCC', 
+        # 'XGXAXSCC', 
+        # 'XGXXSSCC', 
+        # 'XXXASSCC',
+
+        # 'XGXASSCC',
+        # 'XXXXSSCC', 
+        # 'XXXAXSCC', 
+        # 'XGXXXSCC',
+        # 'WGFASXCC',
+
+        # 'XXXXXSCX', 
+        # 'XXXXXSXC',
+
+        # 'XGFASSCC', 
+        # 'WXFASSCC', 
+        # 'WGXASSCC', 
+        # 'WGFXSSCC', 
+        # 'WGFAXSCC', 
+        # 'WGFASXCC', 
+        # 'WGFASSXC', 
+        # 'WGFASSCX',
+        
+        'XXXXSXCX',
+        'XXXXSXXC', 
     ]
 
 }
 
-peptides = peptide_sets['NWPERCLC']
+peptides = peptide_sets['WGFASSCC']
 for pep in peptides:
     avg_modified(params, pep)
 

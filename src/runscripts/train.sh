@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J train
-#SBATCH -t 12:00:00
+#SBATCH -t 2:00:00
 #SBATCH --partition=volta-gpu
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=32G
@@ -11,16 +11,18 @@
 #SBATCH --qos=gpu_access
 
 source ~/.bashrc
-# conda activate LynD
-conda activate /nas/longleaf/home/dieckhau/miniconda3/envs/proteinMPNN
+mamba activate LynD
 
 module load gcc
 module load cuda
 
-cd /proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/src 
+# NOTE: you will need to change the file paths to match your system and code/data install locations
+repo_location=/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/src
+data_location=/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/data/csv/NNK7/rd3/
 
-sele=/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/data/csv/NNK7/rd3/sele
-anti=/proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/data/csv/NNK7/rd3/anti
+sele=${data_location}/sele
+anti=${data_location}/anti
+cd $repo_location
 
 python trainer.py \
 	--sele $sele \
