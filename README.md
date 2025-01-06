@@ -1,6 +1,6 @@
 # LynD-substrate-modeling
 
-This repository contains the code, model weights, and raw data for our paper on LynD substrate specificity ([Steude et al., 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618330v1)).
+This repository contains the code, model weights, and raw data for our paper on LynD substrate specificity ([Steude et al., 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618330)).
 
 ## Citation
 
@@ -22,16 +22,16 @@ Note: While the model training and nomination code is original to this repo, we 
 
 ## Repo Contents:
 
-`datasets/`: Preprocessed sequencing data for selection rounds 1-3 in CSV format.
-`src/model_weights`: Trained ML model weights for LynD NNK7 semi-randomized library rounds 1-3.
-`src/notebooks/`: Jupyter notebook walkthroughs for exploratory data analysis (`eda.ipynb`) and peptide nomination (`nom.ipynb`)
+`datasets/`: Preprocessed sequencing data for selection rounds 1-3 in CSV format.\
+`src/model_weights`: Trained ML model weights for LynD NNK7 semi-randomized library rounds 1-3.\
+`src/notebooks/`: Jupyter notebook walkthroughs for exploratory data analysis (`eda.ipynb`) and peptide nomination (`nom.ipynb`).\
 
-`src/trainer.py`: Script for training new models.
-`src/analysis.py`: Script for analyzing patterns in substrate tolerance and epistasis.
-`src/pct_mod.py`: Script for assessing percent-modification levels for partially randomized libraries (used for epi analysis).
-`src/runscripts`: Example runscripts for the training and analysis code with default options used in the paper.
+`src/trainer.py`: Script for training new models.\
+`src/analysis.py`: Script for analyzing patterns in substrate tolerance and epistasis.\
+`src/pct_mod.py`: Script for assessing percent-modification levels for partially randomized libraries (used for epi analysis).\
+`src/runscripts`: Example runscripts for the training and analysis code with default options used in the paper.\
 
-`src/environment.yml`: List of python dependencies for installation using conda.
+`src/environment.yml`: List of python dependencies for installation using conda.\
 
 ## Installation
 
@@ -108,10 +108,9 @@ python analysis.py \
 	--anti /proj/kuhl_lab/users/dieckhau/LynD-substrate-modeling/LynD-substrate-modeling/datasets/rd3/anti/
 ```
 
-Calculation of percent-modification for semi-randomized peptide is provided in ```src/percent_modified.py```.
+## Contact
 
-## Miscellaneous
-Exploratory data analysis including S-score and Y* score calculation is provided in ```src/eda/eda.ipynb```.
+General questions about the LynD manuscript should be directed to the corresponding author (Dr. Albert Bowers). However, questions regarding this code repository should be raised by opening a GitHub issue on this repo.
 
 ## License
 This work is made available under an MIT license. See the LICENSE file for details.
