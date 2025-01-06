@@ -24,14 +24,14 @@ Note: While the model training and nomination code is original to this repo, we 
 
 `datasets/`: Preprocessed sequencing data for selection rounds 1-3 in CSV format.\
 `src/model_weights`: Trained ML model weights for LynD NNK7 semi-randomized library rounds 1-3.\
-`src/notebooks/`: Jupyter notebook walkthroughs for exploratory data analysis (`eda.ipynb`) and peptide nomination (`nom.ipynb`).\
+`src/notebooks/`: Jupyter notebook walkthroughs for exploratory data analysis (`eda.ipynb`) and peptide nomination (`nom.ipynb`).
 
 `src/trainer.py`: Script for training new models.\
 `src/analysis.py`: Script for analyzing patterns in substrate tolerance and epistasis.\
 `src/pct_mod.py`: Script for assessing percent-modification levels for partially randomized libraries (used for epi analysis).\
-`src/runscripts`: Example runscripts for the training and analysis code with default options used in the paper.\
+`src/runscripts`: Example runscripts for the training and analysis code with default options used in the paper.
 
-`src/environment.yml`: List of python dependencies for installation using conda.\
+`src/environment.yml`: List of python dependencies for installation using conda.
 
 ## Installation
 
