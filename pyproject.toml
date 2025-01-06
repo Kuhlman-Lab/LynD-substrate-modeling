@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["lyndml"]
+
+[project]
+name = "LynDML"
+version = "0.0.1"
+authors = [
+  { name="Henry Dieckhaus", email="dieckhau@unc.edu" },
+]
+description = "ML tools for LynD substrate specificity modeling."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]

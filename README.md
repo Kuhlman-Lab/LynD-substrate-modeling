@@ -21,9 +21,12 @@ If this code or model proves useful for you, please include the following citati
 Note: While the model training and nomination code is original to this repo, we make heavy use of analysis and visualization functions from the [LazDEF analysis](https://github.com/avngrdv/mRNA-display-deep-learning.git) repository by Vinogradov et al. We have attempted to note where these tools are used/adapted throughout the source code. We thank the authors of this work for making these useful tools open-source and well-organized.
 
 ## Repo Contents:
-- Model weights for a LynD substrate specificity model trained on mRNA display data gathered on a semi-randomized NNK7 peptide library
+- Model weights for a LynD substrate specificity model trained on mRNA display data gathered on a semi-randomized NNK7 peptide library (found at `src/model_weights/`)
+- Preprocessed sequencing data for selection rounds 1-3, found in `datasets/`
 - Code for analyzing display data for patterns in substrate tolerance, epistasis, etc.
-- Raw data for rounds 1-3 for this assay
+	- Exploratory data analysis in `notebooks/eda.ipynb`
+- Code for training new models
+
 
 ## Installation
 
